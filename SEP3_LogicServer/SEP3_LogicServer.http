@@ -1,0 +1,6 @@
+@SEP3_LogicServer_HostAddress = http://localhost:5284
+
+GET {{SEP3_LogicServer_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

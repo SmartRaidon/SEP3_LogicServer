@@ -8,6 +8,12 @@ namespace Repositories;
 public class UserRepository : IUserRepository
 {
     private readonly UserService.UserServiceClient _grpcClient;
+    
+    public UserRepository(UserService.UserServiceClient grpcClient)
+    {
+        _grpcClient = grpcClient;
+    }
+
     public async Task<User> AddAsync(User user)
     {
         var request = new CreateUserRequest

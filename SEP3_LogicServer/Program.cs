@@ -18,7 +18,7 @@ AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport
 // Register the gRPC generated client
 builder.Services.AddGrpcClient<Sep3_Proto.UserService.UserServiceClient>(options =>
 {
-    options.Address = new Uri("http://localhost:9090"); // Java gRPC server address
+    options.Address = new Uri("http://localhost:7991"); // Java gRPC server address
 });
 
 // Add services to the container.

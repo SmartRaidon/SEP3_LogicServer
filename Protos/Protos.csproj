@@ -18,11 +18,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\RepositoryContracts\RepositoryContracts.csproj" />
-      <ProjectReference Include="..\SEP3_LogicServer\SEP3_LogicServer.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
       <PackageReference Include="Google.Protobuf" Version="3.33.0" />
       <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
       <PackageReference Include="Grpc.Tools" Version="2.76.0">

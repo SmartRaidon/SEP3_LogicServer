@@ -22,9 +22,6 @@
       <ProjectReference Include="..\ApiContracts\ApiContracts.csproj" />
       <ProjectReference Include="..\Repositories\Repositories.csproj" />
       <ProjectReference Include="..\RepositoryContracts\RepositoryContracts.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Protobuf Include="../Protos/sep3.proto" GrpcServices="Client" />
+      <ProjectReference Include="..\Protos\Protos.csproj" />
     </ItemGroup>
 </Project>

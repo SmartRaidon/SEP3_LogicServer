@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Grpc.Net.ClientFactory;
 using Repositories;
 using RepositoryContracts;
-
+using Sep3_Proto;
 // setting the developer environment manually
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
@@ -15,8 +15,8 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
 
-// Register the gRPC generated client
-builder.Services.AddGrpcClient<Sep3_Proto.UserService.UserServiceClient>(options =>
+// Register the gRPC generated client for homogenious service
+builder.Services.AddGrpcClient<Sep3_Proto.homogeniousService.homogeniousServiceClient>(options =>
 {
     options.Address = new Uri("http://localhost:7991"); // Java gRPC server address
 });

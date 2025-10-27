@@ -1,4 +1,5 @@
 ﻿using Entities;
+using Microsoft.Extensions.DependencyInjection;
 using RepositoryContracts;
 
 
@@ -9,7 +10,10 @@ public class UserRepository : IUserRepository
 {
     private readonly Sep3_Proto.UserService.UserServiceClient _grpcClient;
     
-
+    public UserRepository(IServiceProvider grpcClient)
+    {
+        _grpcClient = grpcClient.GetRequiredService<Sep3_Proto.UserService.UserServiceClient>();
+    }
 
     public async Task<User> AddAsync(User user)
     {

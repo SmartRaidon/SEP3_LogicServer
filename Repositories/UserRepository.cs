@@ -1,22 +1,19 @@
 ﻿using Entities;
 using RepositoryContracts;
-using Sep3_Proto;
+
 
 
 namespace Repositories;
 
 public class UserRepository : IUserRepository
 {
-    private readonly UserService.UserServiceClient _grpcClient;
+    private readonly Sep3_Proto.UserService.UserServiceClient _grpcClient;
     
-    public UserRepository(UserService.UserServiceClient grpcClient)
-    {
-        _grpcClient = grpcClient;
-    }
+
 
     public async Task<User> AddAsync(User user)
     {
-        var request = new CreateUserRequest
+        var request = new Sep3_Proto.CreateUserRequest
         {
             Username = user.Username,
             Password = user.Password

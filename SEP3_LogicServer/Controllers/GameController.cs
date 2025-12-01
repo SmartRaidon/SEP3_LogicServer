@@ -78,6 +78,7 @@ public class GameController : ControllerBase
         {
             return BadRequest("Game already has two players");
         }
+        game.PlayerOId = request.PlayerId;
         game.Status = GameStatus.InProgress;
         gameService.UpdateGame(game);
         GameDTO dto = new()

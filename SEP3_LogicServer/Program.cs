@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Grpc.Net.ClientFactory;
 using Repositories;
 using RepositoryContracts;
+using SEP3_LogicServer.Services;
 using Sep3_Proto;
 // setting the developer environment manually
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -28,7 +29,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
-
+builder.Services.AddScoped<AuthService>();
 var app = builder.Build();
 
 // checking environment 

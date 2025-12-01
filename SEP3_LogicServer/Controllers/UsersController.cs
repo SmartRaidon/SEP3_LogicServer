@@ -2,6 +2,7 @@
 using Entities;
 using Microsoft.AspNetCore.Mvc;
 using RepositoryContracts;
+using SEP3_LogicServer.Services;
 
 namespace SEP3_LogicServer.Controllers;
 
@@ -11,10 +12,11 @@ namespace SEP3_LogicServer.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserRepository _userRepository;
-
-    public UsersController(IUserRepository userRepository)
+    private readonly AuthService authService;
+    public UsersController(IUserRepository userRepository, AuthService authService)
     {
         _userRepository = userRepository;
+        this.authService = authService;
     }
     
     [HttpPost]
@@ -24,9 +26,11 @@ public class UsersController : ControllerBase
         User user = new() // create user
         { 
             Username = request.Username,
-            Password = request.Password
+            //Password = request.Password hashing for work factory - 12 should be the best for general Web app
+            Password = authService.HashPassword(request.Password),
         };
         User created = await _userRepository.AddAsync(user); // add user to repository
+        
         UserDto dto = new() // create DTO
         {
             Id = created.Id,

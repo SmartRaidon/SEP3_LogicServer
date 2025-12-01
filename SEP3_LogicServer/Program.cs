@@ -30,6 +30,8 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddSingleton<GameService>();
+
 var app = builder.Build();
 
 // checking environment 

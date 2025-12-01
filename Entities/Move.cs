@@ -6,5 +6,5 @@ public class Move
     public int GameId { get; set; }
     public int PlayerId { get; set; }
     public int Position { get; set; }
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public DateTime Timestamp { get; set; } = DateTime.Now;
 }

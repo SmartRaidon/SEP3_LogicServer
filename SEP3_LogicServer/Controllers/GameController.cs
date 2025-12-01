@@ -57,7 +57,7 @@ public class GameController : ControllerBase
             Status = game.Status.ToString(),
             CreatedAt = game.CreatedAt
         };
-        return CreatedAtAction(nameof(GetById),$"/game/{game.Id}", dto);
+        return CreatedAtAction(nameof(GetById),new { gameId = game.Id }, dto);
     }
 
     [HttpPost("join")]

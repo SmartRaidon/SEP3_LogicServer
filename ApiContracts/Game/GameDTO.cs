@@ -9,4 +9,6 @@ public class GameDTO
     public int? WinnerId { get; set; } //nullable becase game can be in progress or draw
     public string Status { get; set; }
     public DateTime CreatedAt { get; set; }
+    public int[] Board { get; set; }
+    public List<MoveDTO> Moves { get; set; }
 }

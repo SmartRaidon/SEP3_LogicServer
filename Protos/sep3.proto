@@ -8,6 +8,7 @@ message UserProto{
   string username =2;
   string password =3;
   string email =4;
+  int32 points =5;
 }
 
 message Request

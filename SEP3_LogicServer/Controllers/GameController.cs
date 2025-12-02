@@ -5,11 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 using SEP3_LogicServer.Services;
 
 namespace SEP3_LogicServer.Controllers;
+
 [ApiController]
 [Route("api/[controller]")]
-public class GameController : ControllerBase        
+public class GameController : ControllerBase
 {
     private readonly GameService gameService;
+
     public GameController(GameService gameService)
     {
         this.gameService = gameService;
@@ -35,18 +37,17 @@ public class GameController : ControllerBase
             CreatedAt = game.CreatedAt
         };
         return Ok(dto);
-
     }
 
     [HttpPost("create")]
     public ActionResult<GameDTO> Create([FromBody] CreateGameDTO request)
     {
         //genereate Invite Code 10 characters
-        string inviteCode = GenerateInviteCode();
-        
-        Game game = gameService.CreateGame(request.PlayerId, inviteCode);
 
-          
+
+        Game game = gameService.CreateGame(request.PlayerId);
+
+
         GameDTO dto = new()
         {
             Id = game.Id,
@@ -57,7 +58,7 @@ public class GameController : ControllerBase
             Status = game.Status.ToString(),
             CreatedAt = game.CreatedAt
         };
-        return CreatedAtAction(nameof(GetById),new { gameId = game.Id }, dto);
+        return CreatedAtAction(nameof(GetById), new { gameId = game.Id }, dto);
     }
 
     [HttpPost("join")]
@@ -74,10 +75,11 @@ public class GameController : ControllerBase
             return BadRequest("Game is not waiting for opponent");
         }
 
-        if (game.PlayerOId !=null)
+        if (game.PlayerOId != null)
         {
             return BadRequest("Game already has two players");
         }
+
         game.PlayerOId = request.PlayerId;
         game.Status = GameStatus.InProgress;
         gameService.UpdateGame(game);
@@ -93,10 +95,8 @@ public class GameController : ControllerBase
         };
         return Ok(dto);
     }
-    
-    
-    
-    
+
+
     private string GenerateInviteCode()
     {
         return Convert.ToHexString(Guid.NewGuid().ToByteArray())

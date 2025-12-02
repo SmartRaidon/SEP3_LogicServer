@@ -8,9 +8,9 @@ public class Game
     public required string InviteCode { get; set; }
     public int? WinnerId { get; set; } //nullable becase game can be in progress or draw
     public required GameStatus Status { get; set; }
-    public DateTime CreatedAt { get; set; } 
-    public List<Move> Moves { get; set; }
-    public int[] Board { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public List<Move> Moves { get; set; } = new();
+    public int[] Board { get; set; } = new int[9];
 }
 
 public enum GameStatus

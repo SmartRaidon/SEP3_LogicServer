@@ -4,6 +4,7 @@ using Grpc.Net.ClientFactory;
 using Repositories;
 using RepositoryContracts;
 using SEP3_LogicServer.Services;
+using SEP3_LogicServer.Hubs;
 using Sep3_Proto;
 // setting the developer environment manually
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -27,10 +28,14 @@ builder.Services.AddGrpcClient<Sep3_Proto.homogeniousService.homogeniousServiceC
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSignalR();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddSingleton<GameService>();
+
+
+
 
 var app = builder.Build();
 
@@ -45,6 +50,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
+
 //app.UseHttpsRedirection();
+app.MapHub<GameHub>("/gameHub");
 app.MapControllers();
 app.Run();

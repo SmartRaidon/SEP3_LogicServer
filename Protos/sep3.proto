@@ -24,6 +24,11 @@ message GameResultProto{
   bool isDraw = 5;
 }
 
+message GameResultListProto{
+  repeated GameResultProto gameResults = 1;
+}
+
+
 message Request
 {
   HandlerType handler = 1;

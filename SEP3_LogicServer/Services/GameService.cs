@@ -8,7 +8,7 @@ public class GameService
     private Dictionary<string, int> inviteCodeToGameID = new Dictionary<string, int>();
     private Dictionary<int, Game> gameBase = new Dictionary<int, Game>();
 
-    public Game CreateGame(int playerId)
+    public Game CreateGame(int playerId, string playerName)
     {
         int id;
         do
@@ -27,7 +27,10 @@ public class GameService
         {
             Id = id,
             PlayerXId = playerId,
+            PlayerXName = playerName,
             PlayerOId = null,
+            PlayerOName = null,
+            CurrentTurnPlayerId = playerId,
             InviteCode = inviteCode,
             WinnerId = null,
             Status = GameStatus.WaitingForOpponent,// will have to be changed to waiting for opponent now just testing
@@ -80,7 +83,7 @@ public class GameService
     }
 
 
-    public Game JoinGame(string inviteCode, int playerOId)
+    public Game JoinGame(string inviteCode, int playerOId, string playerOName)
     {
         var game = GetGameByInviteCode(inviteCode)
                    ?? throw new Exception("Game not found with invite code");
@@ -92,6 +95,7 @@ public class GameService
             throw new Exception("Game already has opponent");
 
         game.PlayerOId = playerOId;
+        game.PlayerOName = playerOName;
         game.Status = GameStatus.InProgress;
 
         return UpdateGame(game);
@@ -114,22 +118,15 @@ public class GameService
         if (game.Board[position] != 0)
             throw new Exception("Cell already taken");
 
-        // whose turn isit
-        int xMoves = game.Moves.Count(m => m.PlayerId == game.PlayerXId);
-        int oMoves = game.PlayerOId.HasValue
-            ? game.Moves.Count(m => m.PlayerId == game.PlayerOId.Value)
-            : 0;
+        // --- TURN ENFORCEMENT ---
+        if (playerId != game.CurrentTurnPlayerId)
+            throw new Exception("Not your turn!");
 
-        bool xTurn = xMoves == oMoves; // X starts
-
-        if (xTurn && playerId != game.PlayerXId)
-            throw new Exception("Not your turn (expected X player)");
-        if (!xTurn && playerId != game.PlayerOId)
-            throw new Exception("Not your turn (expected O player)");
-
-        int mark = xTurn ? 1 : 2; // 1 = X, 2 = O
+        // Determine mark
+        int mark = playerId == game.PlayerXId ? 1 : 2;
         game.Board[position] = mark;
 
+        // Record move
         var move = new Move
         {
             MoveId = game.Moves.Count + 1,
@@ -138,27 +135,36 @@ public class GameService
             Position = position,
             Timestamp = DateTime.Now
         };
-
         game.Moves.Add(move);
 
-        // Win / draw check
-        if (IsWinningMove(game.Board, mark))
+        // Check win / draw
+        var winningCells = GetWinningCells(game.Board, mark);
+        if (winningCells != null)
         {
             game.Status = GameStatus.Finished;
             game.WinnerId = playerId;
+            game.WinningCells = winningCells;
+            game.CurrentTurnPlayerId = 0; // no next turn
         }
         else if (IsDraw(game.Board))
         {
             game.Status = GameStatus.Finished;
             game.WinnerId = null;
+            game.CurrentTurnPlayerId = 0; // no next turn
+        }
+        else
+        {
+            // Switch turn to the other player
+            game.CurrentTurnPlayerId = (playerId == game.PlayerXId)
+                ? game.PlayerOId ?? game.PlayerXId // in case O not joined yet
+                : game.PlayerXId;
         }
 
         UpdateGame(game);
-
         return (game, move);
     }
 
-    private bool IsWinningMove(int[] board, int mark)
+    private int[]? GetWinningCells(int[] board, int mark)
     {
         int[][] lines =
         {
@@ -167,7 +173,13 @@ public class GameService
             new[] { 0, 4, 8 }, new[] { 2, 4, 6 } // diags
         };
 
-        return lines.Any(line => line.All(i => board[i] == mark));
+        foreach (var line in lines)
+        {
+            if (line.All(i => board[i] == mark))
+                return line; // return the winning indexes
+        }
+
+        return null;
     }
 
     private bool IsDraw(int[] board) => board.All(c => c != 0);

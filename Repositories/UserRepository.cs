@@ -1,6 +1,7 @@
 ﻿using Entities;
 using Microsoft.Extensions.DependencyInjection;
 using RepositoryContracts;
+using Google.Protobuf.WellKnownTypes;
 using Sep3_Proto;
 
 
@@ -9,18 +10,18 @@ namespace Repositories;
 public class UserRepository : IUserRepository
 {
     private readonly homogeniousService.homogeniousServiceClient _grpcClient;
-    
+
     public UserRepository(homogeniousService.homogeniousServiceClient grpcClient)
     {
         _grpcClient = grpcClient;
     }
 
     public async Task<User> AddAsync(User user)
-    {   
+    {
         try
         {
             Console.WriteLine($"Creating user: {user.Username}");
-            
+
             // Create a UserProto to send as payload
             var userProto = new UserProto
             {
@@ -28,31 +29,32 @@ public class UserRepository : IUserRepository
                 Password = user.Password
             };
 
-            Console.WriteLine($"UserProto created: Username={userProto.Username}, Password length={userProto.Password?.Length}");
+            Console.WriteLine(
+                $"UserProto created: Username={userProto.Username}, Password length={userProto.Password?.Length}");
 
             // Wrap the UserProto in an Any
             var anyPayload = Google.Protobuf.WellKnownTypes.Any.Pack(userProto);
-            
+
             Console.WriteLine($"Any payload created, type URL: {anyPayload.TypeUrl}");
-            
+
             // Create the homogenious request
             var request = new Request
             {
-                Handler = HandlerType.HandlerUser,  // Use HANDLER_USER enum
-                Action = ActionType.ActionCreate,   // Use ACTION_CREATE enum
+                Handler = HandlerType.HandlerUser, // Use HANDLER_USER enum
+                Action = ActionType.ActionCreate, // Use ACTION_CREATE enum
                 Payload = anyPayload
             };
 
             Console.WriteLine($"Sending request: Handler={request.Handler}, Action={request.Action}");
-            
+
             var response = await _grpcClient.handleRequestAsync(request);
-            
+
             Console.WriteLine($"Received response with status: {response.Status}");
-            
+
             if (response.Status == StatusType.StatusOk)
             {
                 Console.WriteLine($"Response payload type URL: {response.Payload.TypeUrl}");
-                
+
                 // Unpack the response payload (Java server wraps it in Any)
                 var responseProto = response.Payload.Unpack<UserProto>();
                 Console.WriteLine($"Created user on Java server: {responseProto.Username} with id {responseProto.Id}");
@@ -61,12 +63,12 @@ public class UserRepository : IUserRepository
                 {
                     Id = responseProto.Id,
                     Username = responseProto.Username,
-                    Password = user.Password
+                    Password = user.Password,
+                    Points = responseProto.Points
                 };
             }
             else if (response.Status == StatusType.StatusError)
             {
-                // Try to unpack error message if it's a string
                 try
                 {
                     var errorMsg = response.Payload.Unpack<Google.Protobuf.WellKnownTypes.StringValue>();
@@ -84,19 +86,116 @@ public class UserRepository : IUserRepository
         }
         catch (Grpc.Core.RpcException ex)
         {
-            Console.WriteLine($"ERROR: gRPC exception. Status: {ex.StatusCode}, Message: {ex.Message}, Detail: {ex.Status.Detail}");
-            
+            Console.WriteLine(
+                $"ERROR: gRPC exception. Status: {ex.StatusCode}, Message: {ex.Message}, Detail: {ex.Status.Detail}");
+
             if (ex.StatusCode == Grpc.Core.StatusCode.Unimplemented)
             {
-                throw new InvalidOperationException("The Java gRPC server does not have the expected method. Please ensure the server is running and implementing the homogenious service.", ex);
+                throw new InvalidOperationException(
+                    "The Java gRPC server does not have the expected method. Please ensure the server is running and implementing the homogenious service.",
+                    ex);
             }
-            
+
             throw;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"ERROR: Failed to create user: {ex.Message}");
             Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            throw;
+        }
+    }
+
+    public async Task<User?> GetByIdAsync(int id)
+    {
+        var idProto = new Int32Value { Value = id };
+        var anyPayload = Any.Pack(idProto);
+
+        var request = new Request
+        {
+            Handler = HandlerType.HandlerUser,
+            Action = ActionType.ActionGet,
+            Payload = anyPayload
+        };
+
+        var response = await _grpcClient.handleRequestAsync(request);
+
+        if (response.Status == StatusType.StatusOk)
+        {
+            var userProto = response.Payload.Unpack<UserProto>();
+
+            return new User
+            {
+                Id = userProto.Id,
+                Username = userProto.Username,
+                Password = "", // hmm
+                Email = userProto.Email,
+                Points = userProto.Points
+            };
+        }
+
+        if (response.Status == StatusType.StatusError)
+        {
+            return null;
+        }
+
+        return null;
+    }
+
+    public async Task<User> UpdateAsync(User user)
+    {
+        try
+        {
+            Console.WriteLine($"Updating user: {user.Id} ({user.Username}), points={user.Points}");
+
+            var userProto = new UserProto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Password = user.Password,
+                Email = user.Email,
+                Points = user.Points // goes to javadb server
+            };
+
+            var anyPayload = Any.Pack(userProto);
+
+            var request = new Request
+            {
+                Handler = HandlerType.HandlerUser,
+                Action = ActionType.ActionUpdate,
+                Payload = anyPayload
+            };
+
+            var response = await _grpcClient.handleRequestAsync(request);
+
+            Console.WriteLine($"UpdateAsync response status: {response.Status}");
+
+            if (response.Status == StatusType.StatusOk)
+            {
+                var responseProto = response.Payload.Unpack<UserProto>();
+
+                return new User
+                {
+                    Id = responseProto.Id,
+                    Username = responseProto.Username,
+                    Password = user.Password, //not sure
+                    Email = responseProto.Email,
+                    Points = responseProto.Points
+                };
+            }
+
+            if (response.Status == StatusType.StatusError)
+            {
+                Console.WriteLine("UpdateAsync: STATUS_ERROR érkezett.");
+                throw new InvalidOperationException("Server returned error during update.");
+            }
+
+            throw new InvalidOperationException($"Server returned unexpected status: {response.Status}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"ERROR in UpdateAsync: {ex.Message}");
+            Console.WriteLine(ex.StackTrace);
             throw;
         }
     }

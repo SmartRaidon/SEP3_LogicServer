@@ -4,13 +4,25 @@ using Grpc.Net.ClientFactory;
 using Repositories;
 using RepositoryContracts;
 using SEP3_LogicServer.Services;
+using SEP3_LogicServer.Hubs;
 using Sep3_Proto;
 // setting the developer environment manually
-var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddCors(options =>
 {
-    Args = args,
-    EnvironmentName = Environments.Development
+    options.AddDefaultPolicy(policy =>
+    {
+        policy
+            .WithOrigins("https://localhost:7073") // Blazor kliens URL-je
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
 });
+
+builder.Services.AddSignalR();
 
 // Allow HTTP/2 without TLS (only for local/dev) - add this if we don't use https
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
@@ -27,12 +39,22 @@ builder.Services.AddGrpcClient<Sep3_Proto.homogeniousService.homogeniousServiceC
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSignalR();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddSingleton<GameService>();
 
+
+
+
 var app = builder.Build();
+
+app.UseCors();
+
+app.MapHub<GameHub>("/gamehub");
+
+
 
 // checking environment 
 Console.WriteLine($"Environment: {app.Environment.EnvironmentName}");
@@ -45,6 +67,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
+
 //app.UseHttpsRedirection();
+
 app.MapControllers();
 app.Run();

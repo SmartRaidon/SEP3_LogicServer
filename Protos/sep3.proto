@@ -1,4 +1,5 @@
 syntax = "proto3";
+
 package dk.via.dataserver.gRPC;
 option csharp_namespace = "Sep3_Proto";
 import "google/protobuf/any.proto";
@@ -11,6 +12,11 @@ message UserProto{
   int32 points =5;
 }
 
+message GameResultListProto{
+  repeated GameResultProto gameResults = 1;
+}
+
+
 message Request
 {
   HandlerType handler = 1;
@@ -22,17 +28,11 @@ message Response
   StatusType status = 1;
   google.protobuf.Any payload = 2;
 }
-
-service homogeniousService{
-  rpc handleRequest(Request) returns (Response);
-}
-
-// enums
-
 enum HandlerType
 {
   HANDLER_UNKNOWN = 0;
   HANDLER_USER = 1; //maybe maybe
+  HANDLER_GAME_RESULT = 2;
 }
 
 enum ActionType
@@ -51,4 +51,10 @@ enum StatusType
   STATUS_OK = 1;
   STATUS_ERROR = 2;
   STATUS_INVALID_PAYLOAD = 3;
+}
+
+
+service homogeniousService
+{
+  rpc handleRequest(Request) returns (Response);
 }

@@ -30,7 +30,7 @@ public class GameService
             PlayerOId = null,
             InviteCode = inviteCode,
             WinnerId = null,
-            Status = GameStatus.WaitingForOpponent,
+            Status = GameStatus.WaitingForOpponent,// will have to be changed to waiting for opponent now just testing
             CreatedAt = DateTime.Now
         };
 

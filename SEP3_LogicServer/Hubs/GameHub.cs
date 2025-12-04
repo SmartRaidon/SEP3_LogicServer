@@ -110,6 +110,7 @@ public class GameHub : Hub
     // Player moves
     public async Task MakeMove(int gameId, int playerId, int position)
     {
+        Console.WriteLine($"[Hub] MakeMove called: game={gameId}, player={playerId}, pos={position}");
         var (game, move) = _gameService.MakeMove(gameId, playerId, position);
 
         var gameDto = MapGameToDto(game);

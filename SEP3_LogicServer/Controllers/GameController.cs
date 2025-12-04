@@ -1,4 +1,5 @@
-﻿using ApiContracts;
+﻿
+/*  using ApiContracts;
 using ApiContracts.Game;
 using Entities;
 using Microsoft.AspNetCore.Mvc;
@@ -38,8 +39,7 @@ public class GameController : ControllerBase
         };
         return Ok(dto);
     }
-
-    [HttpPost("create")]
+   [HttpPost("create")]
     public ActionResult<GameDTO> Create([FromBody] CreateGameDTO request)
     {
         //genereate Invite Code 10 characters
@@ -61,7 +61,7 @@ public class GameController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { gameId = game.Id }, dto);
     }
 
-    [HttpPost("join")]
+   [HttpPost("join")]
     public ActionResult<GameDTO> JoinMatch([FromBody] JoinGameDTO request)
     {
         Game? game = gameService.GetGameByInviteCode(request.InviteCode);
@@ -102,4 +102,4 @@ public class GameController : ControllerBase
         return Convert.ToHexString(Guid.NewGuid().ToByteArray())
             .Substring(0, 10);
     }
-}
+}*/

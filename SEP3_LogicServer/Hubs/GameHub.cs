@@ -160,6 +160,27 @@ public class GameHub : Hub
     public async Task SendTest(string message)
     {
         // visszaküldjük ugyanannak a kliensnek
-        await Clients.Caller.SendAsync("TestMessage", $"Szerver válasza: {message}");
+        await Clients.Caller.SendAsync("TestMessage", $"Server response: {message}");
+    }
+    
+    public async Task RequestReplay(int gameId, int playerId)
+    {
+        var game = _gameService.RequestReplay(gameId, playerId);
+
+        // notify opponent that someone requested replay
+        await Clients.Group(gameId.ToString()).SendAsync(
+            "ReplayRequested", playerId);
+
+        // if both agreed we send reset game state
+        if (game.Status == GameStatus.InProgress &&
+            !game.ReplayRequestedByX &&
+            !game.ReplayRequestedByO)
+        {
+            var dto = MapGameToDto(game);
+            await Clients.Group(gameId.ToString()).SendAsync(
+                "ReplayStarted",
+                dto
+            );
+        }
     }
 }

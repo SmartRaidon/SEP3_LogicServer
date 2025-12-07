@@ -183,4 +183,25 @@ public class GameService
     }
 
     private bool IsDraw(int[] board) => board.All(c => c != 0);
+
+    public Game RequestReplay(int gameId, int playerId)
+    {
+        var game = GetGameById(gameId);
+        if (game.Status != GameStatus.Finished)
+            throw new Exception("Game is not finished yet. Replay only allowed after finishing.");
+
+        if (playerId == game.PlayerXId)
+            game.ReplayRequestedByX = true;
+        else if (playerId == game.PlayerOId)
+            game.ReplayRequestedByO = true;
+        else
+            throw new Exception("Player does not belong to this game");
+        
+        if (game.ReplayRequestedByX && game.ReplayRequestedByO)
+        {
+            game.Reset();
+        }
+
+        return UpdateGame(game);
+    }
 }

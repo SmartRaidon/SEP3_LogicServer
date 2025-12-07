@@ -15,6 +15,23 @@ public class Game
     public List<Move> Moves { get; set; } = new();
     public int[] Board { get; set; } = new int[9];
     public int[]? WinningCells { get; set; }
+    
+    // replay
+    public bool ReplayRequestedByX { get; set; }
+    public bool ReplayRequestedByO { get; set; }
+    
+    public void Reset()
+    {
+        Moves.Clear();
+        Array.Clear(Board, 0, Board.Length);
+        WinningCells = null;
+        WinnerId = null;
+        Status = GameStatus.InProgress;
+        CurrentTurnPlayerId = PlayerXId;
+        ReplayRequestedByX = false;
+        ReplayRequestedByO = false;
+        
+    }
 }
 
 public enum GameStatus

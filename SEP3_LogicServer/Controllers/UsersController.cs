@@ -18,24 +18,114 @@ public class UsersController : ControllerBase
         _userRepository = userRepository;
         this.authService = authService;
     }
-    
-    [HttpPost]
+   // POST /api/users/register
+    [HttpPost("register")]
     public async Task<ActionResult<UserDto>> RegisterAsync([FromBody] CreateUserDto request)
     {
-        Console.WriteLine("Incoming request... Registering... " + request.Username + " - "  + request.Password);
-        User user = new() // create user
-        { 
-            Username = request.Username,
-            //Password = request.Password hashing for work factory - 12 should be the best for general Web app
-            Password = authService.HashPassword(request.Password),
-        };
-        User created = await _userRepository.AddAsync(user); // add user to repository
+        Console.WriteLine($"Registration: username={request.Username}, email={request.Email}");
+        Console.WriteLine($"Plain password received: '{request.Password}'");
         
-        UserDto dto = new() // create DTO
+        try
         {
-            Id = created.Id,
-            UserName = created.Username
-        };
-        return Created($"/users/{dto.Id}", dto); // return created userDTO
+            // HASH the password BEFORE sending to Java
+            string hashedPassword = authService.HashPassword(request.Password);
+            Console.WriteLine($"Password hashed: {hashedPassword.Substring(0, Math.Min(30, hashedPassword.Length))}...");
+            
+            User user = new() 
+            { 
+                Username = request.Username,
+                Email = request.Email,
+                Password = hashedPassword  // Send HASHED password
+            };
+            
+            User created = await _userRepository.AddAsync(user);
+            
+            UserDto dto = new() 
+            {
+                Id = created.Id,
+                Username = created.Username,
+                Email = created.Email
+            };
+            
+            Console.WriteLine($"User registered: {created.Email} (ID: {created.Id})");
+            return Created($"/api/users/{dto.Id}", dto);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Registration error: {ex.Message}");
+            return StatusCode(500);
+        }
     }
+
+    // POST /api/users/login
+    [HttpPost("login")]
+    public async Task<ActionResult<LoginResponseDTO>> LoginAsync([FromBody] LoginDTO request)
+    {
+        Console.WriteLine($"Login attempt: email={request.Email}");
+        Console.WriteLine($"Plain password received: {request.Password}");
+
+        try
+        {
+            User? user = await authService.ValidateUserAsync(request.Email, request.Password);
+
+            if (user == null)
+            {
+                Console.WriteLine($"Login failed");
+                return Unauthorized(new LoginResponseDTO
+                {
+                    UserId = 0,
+                    Username = ""
+                });
+            }
+
+            var response = new LoginResponseDTO
+            {
+                UserId = user.Id,
+                Username = user.Username
+            };
+
+            Console.WriteLine($"Login successful: {user.Email} (ID: {user.Id})");
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Login error: {ex.Message}");
+            return StatusCode(500, new LoginResponseDTO
+            {
+                UserId = 0,
+                Username = ""
+            });
+        }
+    }
+
+    
+    // GET /api/users/{id}
+    [HttpGet("{id}")]
+    public async Task<ActionResult<UserDto>> GetUser(int id)
+    {
+        try
+        {
+            User? user = await _userRepository.GetSingleAsync(id);
+            
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            UserDto dto = new()
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email
+            };
+
+            return Ok(dto);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting user: {ex.Message}");
+            return StatusCode(500);
+        }
+    }
+    
 }

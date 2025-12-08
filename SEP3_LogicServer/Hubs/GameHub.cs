@@ -112,32 +112,17 @@ public class GameHub : Hub
     // Player moves
     public async Task MakeMove(int gameId, int playerId, int position)
     {
-        Game game;
-        Move? move = null;
-
-        try
-        {
-            (game, move) = _gameService.MakeMove(gameId, playerId, position);
-        }
-        catch (TimeoutException)
-        {
-            // lose because of timer 
-            game = _gameService.GetGameById(gameId)
-                   ?? throw new Exception("Game not found after timeout.");
-
-            // no new move here
-        }
+        Console.WriteLine($"[Hub] MakeMove called: game={gameId}, player={playerId}, pos={position}");
+        var (game, move) = _gameService.MakeMove(gameId, playerId, position);
 
         var gameDto = MapGameToDto(game);
+        var moveDto = MapMoveToDto(move);
 
-        if (move is not null)
-        {
-            var moveDto = MapMoveToDto(move);
+        // one step event
+        await Clients.Group(gameId.ToString())
+            .SendAsync("MoveMade", moveDto);
 
-            await Clients.Group(gameId.ToString())
-                .SendAsync("MoveMade", moveDto);
-        }
-
+        // current game
         await Clients.Group(game.Id.ToString())
             .SendAsync("GameUpdated", gameDto);
 
@@ -145,10 +130,12 @@ public class GameHub : Hub
         {
             if (game.WinnerId.HasValue)
             {
+                // winner 2 points
                 await AddPointsAsync(game.WinnerId.Value, 2);
             }
             else
             {
+                // no winner 1-1points for each
                 await AddPointsAsync(game.PlayerXId, 1);
 
                 if (game.PlayerOId.HasValue)
@@ -161,8 +148,6 @@ public class GameHub : Hub
                 .SendAsync("GameFinished", gameDto);
         }
     }
-
-    
 
 
     public Task<GameDTO> GetGameState(int gameId)

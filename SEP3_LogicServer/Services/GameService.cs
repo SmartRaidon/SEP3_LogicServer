@@ -34,8 +34,7 @@ public class GameService
             InviteCode = inviteCode,
             WinnerId = null,
             Status = GameStatus.WaitingForOpponent,// will have to be changed to waiting for opponent now just testing
-            CreatedAt = DateTime.Now,
-            TurnDeadline = DateTime.UtcNow.AddMinutes(1)
+            CreatedAt = DateTime.Now
         };
 
         gameBase.Add(id, game);
@@ -98,95 +97,27 @@ public class GameService
         game.PlayerOId = playerOId;
         game.PlayerOName = playerOName;
         game.Status = GameStatus.InProgress;
-        game.TurnDeadline = DateTime.UtcNow.AddMinutes(1);
 
         return UpdateGame(game);
     }
 
 
     public (Game Game, Move Move) MakeMove(int gameId, int playerId, int position)
-{
-    var game = GetGameById(gameId);
-
-    if (game.Status != GameStatus.InProgress)
-        throw new Exception("Game is not in progress");
-
-    game.Board ??= new int[9];
-    game.Moves ??= new List<Move>();
-
-    // check whose turn is it 
-    int xMoves = game.Moves.Count(m => m.PlayerId == game.PlayerXId);
-    int oMoves = game.PlayerOId.HasValue
-        ? game.Moves.Count(m => m.PlayerId == game.PlayerOId.Value)
-        : 0;
-
-    bool xTurn = xMoves == oMoves; //x starts, if they have the same amount of moves x turns
-
-    int currentPlayerId = xTurn ? game.PlayerXId : game.PlayerOId ?? 0;
-    int opponentPlayerId = xTurn ? (game.PlayerOId ?? 0) : game.PlayerXId;
-
-    // timout check
-    if (game.TurnDeadline.HasValue && DateTime.UtcNow > game.TurnDeadline.Value)
     {
-        // time ran out for the one who suppose to move
-        game.Status = GameStatus.Finished;
-        game.WinnerId = opponentPlayerId != 0 ? opponentPlayerId : (int?)null;
+        var game = GetGameById(gameId);
 
-        UpdateGame(game);
+        if (game.Status != GameStatus.InProgress)
+            throw new Exception("Game is not in progress");
 
-        // sign for the hub that it ended cuz of timer 
-        throw new TimeoutException("Turn time has expired.");
-    }
+        if (position < 0 || position > 8)
+            throw new Exception("Invalid board position");
 
-    // validations
-    if (position < 0 || position > 8)
-        throw new Exception("Invalid board position");
+        game.Board ??= new int[9];
+        game.Moves ??= new List<Move>();
 
-    if (game.Board[position] != 0)
-        throw new Exception("Cell already taken");
+        if (game.Board[position] != 0)
+            throw new Exception("Cell already taken");
 
-    if (playerId != currentPlayerId)
-        throw new Exception("Not your turn");
-
-    int mark = xTurn ? 1 : 2; // 1 = X, 2 = O
-    game.Board[position] = mark;
-
-    var move = new Move
-    {
-        MoveId = game.Moves.Count + 1,
-        GameId = game.Id,
-        PlayerId = playerId,
-        Position = position,
-        Timestamp = DateTime.Now
-    };
-
-    game.Moves.Add(move);
-
-    // Win / draw check
-    if (IsWinningMove(game.Board, mark))
-    {
-        game.Status = GameStatus.Finished;
-        game.WinnerId = playerId;
-    }
-    else if (IsDraw(game.Board))
-    {
-        game.Status = GameStatus.Finished;
-        game.WinnerId = null;
-    }
-
-    // Ha még megy a game, új határidő a következő játékosnak
-    if (game.Status == GameStatus.InProgress)
-    {
-        game.TurnDeadline = DateTime.UtcNow.AddMinutes(1);
-    }
-
-    UpdateGame(game);
-
-    return (game, move);
-}
-
-
-    private bool IsWinningMove(int[] board, int mark)
         // --- TURN ENFORCEMENT ---
         if (playerId != game.CurrentTurnPlayerId)
             throw new Exception("Not your turn!");

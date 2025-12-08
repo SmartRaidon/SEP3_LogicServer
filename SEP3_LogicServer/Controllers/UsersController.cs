@@ -13,11 +13,13 @@ public class UsersController : ControllerBase
 {
     private readonly IUserRepository _userRepository;
     private readonly AuthService authService;
+    
     public UsersController(IUserRepository userRepository, AuthService authService)
     {
         _userRepository = userRepository;
         this.authService = authService;
     }
+    
    // POST /api/users/register
     [HttpPost("register")]
     public async Task<ActionResult<UserDto>> RegisterAsync([FromBody] CreateUserDto request)
@@ -59,7 +61,7 @@ public class UsersController : ControllerBase
 
     // POST /api/users/login
     [HttpPost("login")]
-    public async Task<ActionResult<LoginResponseDTO>> LoginAsync([FromBody] LoginDTO request)
+    public async Task<ActionResult<UserDto>> LoginAsync([FromBody] LoginDTO request)
     {
         Console.WriteLine($"Login attempt: email={request.Email}");
         Console.WriteLine($"Plain password received: {request.Password}");
@@ -71,16 +73,16 @@ public class UsersController : ControllerBase
             if (user == null)
             {
                 Console.WriteLine($"Login failed");
-                return Unauthorized(new LoginResponseDTO
+                return Unauthorized(new UserDto()
                 {
-                    UserId = 0,
+                    Id = 0,
                     Username = ""
                 });
             }
 
-            var response = new LoginResponseDTO
+            var response = new UserDto()
             {
-                UserId = user.Id,
+                Id = user.Id,
                 Username = user.Username
             };
 
@@ -90,9 +92,9 @@ public class UsersController : ControllerBase
         catch (Exception ex)
         {
             Console.WriteLine($"Login error: {ex.Message}");
-            return StatusCode(500, new LoginResponseDTO
+            return StatusCode(500, new UserDto()
             {
-                UserId = 0,
+                Id = 0,
                 Username = ""
             });
         }

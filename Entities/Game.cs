@@ -14,6 +14,8 @@ public class Game
     public DateTime CreatedAt { get; set; }
     public List<Move> Moves { get; set; } = new();
     public int[] Board { get; set; } = new int[9];
+    
+    public DateTime? TurnDeadline { get; set; }
     public int[]? WinningCells { get; set; }
     
     // replay

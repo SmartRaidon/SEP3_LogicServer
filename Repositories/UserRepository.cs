@@ -26,6 +26,7 @@ public class UserRepository : IUserRepository
             var userProto = new UserProto
             {
                 Username = user.Username,
+                Email = user.Email,
                 Password = user.Password
             };
 
@@ -64,6 +65,7 @@ public class UserRepository : IUserRepository
                     Id = responseProto.Id,
                     Username = responseProto.Username,
                     Password = user.Password,
+                    Email = responseProto.Email,
                     Points = responseProto.Points
                 };
             }
@@ -199,4 +201,93 @@ public class UserRepository : IUserRepository
             throw;
         }
     }
+
+    public async Task<User?> GetByEmailAsync(string email)
+    {
+        try
+        {
+            var userProto = new UserProto { Email = email };
+            var anyPayload = Any.Pack(userProto);
+            
+            var request = new Request
+            {
+                Handler = HandlerType.HandlerUser,
+                Action = ActionType.ActionGet,
+                Payload = anyPayload
+            };
+
+            Console.WriteLine($"Looking up user by email: {email}");
+            var response = await _grpcClient.handleRequestAsync(request);
+            
+            if (response?.Payload != null)
+            {
+                var responseProto = response.Payload.Unpack<UserProto>();
+                
+                if (responseProto.Id > 0 && !string.IsNullOrEmpty(responseProto.Email))
+                {
+                    Console.WriteLine($"User found: {responseProto.Email} (ID: {responseProto.Id})");
+                    
+                    return new User
+                    {
+                        Id = responseProto.Id,
+                        Username = responseProto.Username,
+                        Email = responseProto.Email,
+                        Password = responseProto.Password // Hashed password from database
+                    };
+                }
+            }
+            
+            Console.WriteLine($"User not found with email: {email}");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"ERROR getting user by email: {ex.Message}");
+            return null;
+        }
+    }
+    
+
+
+    public async Task<User?> GetSingleAsync(int id)
+    {
+        try
+        {
+            var userProto = new UserProto { Id = id };
+            var anyPayload = Any.Pack(userProto);
+            var request = new Request
+            {
+                Handler = HandlerType.HandlerUser,
+                Action = ActionType.ActionGet,
+                Payload = anyPayload
+            };
+            Console.Write($"Getting user by id: {id}");
+            var response = await _grpcClient.handleRequestAsync(request);
+            if (response.Status == StatusType.StatusOk)
+            {
+                var responseProto = response.Payload.Unpack<UserProto>();
+                if (responseProto.Id>0)
+                {
+                    return new User
+                    {
+                        Id = responseProto.Id,
+                        Username = responseProto.Username,
+                        Email=responseProto.Email,
+                        Password = responseProto.Password
+                    };
+                }
+                
+            }
+            return null;
+       
+
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"ERROR: Failed to get user by ID: {ex.Message}");
+            return null;
+        }
+    }
+
+  
 }

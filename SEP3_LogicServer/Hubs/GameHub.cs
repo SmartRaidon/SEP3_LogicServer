@@ -28,6 +28,8 @@ public class GameHub : Hub
             Id = game.Id,
             PlayerXId = game.PlayerXId,
             PlayerOId = game.PlayerOId,
+            PlayerXName = game.PlayerXName,
+            PlayerOName = game.PlayerOName,
             InviteCode = game.InviteCode,
             WinnerId = game.WinnerId,
             Status = game.Status.ToString(), // enum -> string
@@ -35,7 +37,9 @@ public class GameHub : Hub
             Board = game.Board,
             Moves = game.Moves
                 .Select(MapMoveToDto)
-                .ToList()
+                .ToList(),
+            WinningCells = game.WinningCells,
+            NextPlayerId = game.CurrentTurnPlayerId
         };
     }
 
@@ -67,14 +71,12 @@ public class GameHub : Hub
     }
 
 
-    // creating a gaem
-    public async Task<GameDTO> CreateGame(int playerId)
+    // creating a game
+    public async Task<GameDTO> CreateGame(int playerId, string playerName)
     {
         try
         {
-            var game = _gameService.CreateGame(playerId);
-
-
+            var game = _gameService.CreateGame(playerId, playerName);
             await Groups.AddToGroupAsync(Context.ConnectionId, game.Id.ToString());
 
             // entity -> DTO
@@ -90,9 +92,9 @@ public class GameHub : Hub
     }
 
 
-    public async Task<GameDTO> JoinGame(string inviteCode, int playerOId)
+    public async Task<GameDTO> JoinGame(string inviteCode, int playerOId, string playerOName)
     {
-        var game = _gameService.JoinGame(inviteCode, playerOId);
+        var game = _gameService.JoinGame(inviteCode, playerOId, playerOName);
 
 
         await Groups.AddToGroupAsync(Context.ConnectionId, game.Id.ToString());
@@ -173,6 +175,27 @@ public class GameHub : Hub
     public async Task SendTest(string message)
     {
         // visszaküldjük ugyanannak a kliensnek
-        await Clients.Caller.SendAsync("TestMessage", $"Szerver válasza: {message}");
+        await Clients.Caller.SendAsync("TestMessage", $"Server response: {message}");
+    }
+    
+    public async Task RequestReplay(int gameId, int playerId)
+    {
+        var game = _gameService.RequestReplay(gameId, playerId);
+
+        // notify opponent that someone requested replay
+        await Clients.Group(gameId.ToString()).SendAsync(
+            "ReplayRequested", playerId);
+
+        // if both agreed we send reset game state
+        if (game.Status == GameStatus.InProgress &&
+            !game.ReplayRequestedByX &&
+            !game.ReplayRequestedByO)
+        {
+            var dto = MapGameToDto(game);
+            await Clients.Group(gameId.ToString()).SendAsync(
+                "ReplayStarted",
+                dto
+            );
+        }
     }
 }

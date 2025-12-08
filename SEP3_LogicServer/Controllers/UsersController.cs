@@ -61,7 +61,7 @@ public class UsersController : ControllerBase
 
     // POST /api/users/login
     [HttpPost("login")]
-    public async Task<ActionResult<UserDto>> LoginAsync([FromBody] LoginDTO request)
+    public async Task<ActionResult<UserDto>> LoginAsync([FromBody] LoginDto request)
     {
         Console.WriteLine($"Login attempt: email={request.Email}");
         Console.WriteLine($"Plain password received: {request.Password}");

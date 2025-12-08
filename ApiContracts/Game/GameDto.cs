@@ -1,6 +1,6 @@
 ﻿namespace ApiContracts.Game;
 
-public class GameDTO
+public class GameDto
 {
     public int Id { get; set; }
     public int PlayerXId { get; set; }
@@ -13,6 +13,6 @@ public class GameDTO
     public string Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public int[] Board { get; set; }
-    public List<MoveDTO> Moves { get; set; }
+    public List<MoveDto> Moves { get; set; }
     public int[]? WinningCells { get; set; }
 }

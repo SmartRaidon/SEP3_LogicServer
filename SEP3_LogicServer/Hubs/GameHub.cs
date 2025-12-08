@@ -21,9 +21,9 @@ public class GameHub : Hub
         _userRepository = userRepository;
     }
 
-    private static GameDTO MapGameToDto(Game game)
+    private static GameDto MapGameToDto(Game game)
     {
-        return new GameDTO
+        return new GameDto
         {
             Id = game.Id,
             PlayerXId = game.PlayerXId,
@@ -43,9 +43,9 @@ public class GameHub : Hub
         };
     }
 
-    private static MoveDTO MapMoveToDto(Move move)
+    private static MoveDto MapMoveToDto(Move move)
     {
-        return new MoveDTO
+        return new MoveDto
         {
             MoveId = move.MoveId,
             GameId = move.GameId,
@@ -72,7 +72,7 @@ public class GameHub : Hub
 
 
     // creating a game
-    public async Task<GameDTO> CreateGame(int playerId, string playerName)
+    public async Task<GameDto> CreateGame(int playerId, string playerName)
     {
         try
         {
@@ -92,7 +92,7 @@ public class GameHub : Hub
     }
 
 
-    public async Task<GameDTO> JoinGame(string inviteCode, int playerOId, string playerOName)
+    public async Task<GameDto> JoinGame(string inviteCode, int playerOId, string playerOName)
     {
         var game = _gameService.JoinGame(inviteCode, playerOId, playerOName);
 
@@ -150,7 +150,7 @@ public class GameHub : Hub
     }
 
 
-    public Task<GameDTO> GetGameState(int gameId)
+    public Task<GameDto> GetGameState(int gameId)
     {
         var game = _gameService.GetGameById(gameId);
         var dto = MapGameToDto(game);

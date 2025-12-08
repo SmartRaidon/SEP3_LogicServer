@@ -1,6 +1,6 @@
 ﻿namespace ApiContracts.Game;
 
-public class MoveDTO
+public class MoveDto
 {
     public int MoveId { get; set; }
     public int GameId { get; set; }

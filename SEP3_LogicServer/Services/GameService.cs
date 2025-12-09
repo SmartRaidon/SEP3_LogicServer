@@ -1,12 +1,21 @@
 ﻿using System.Numerics;
 using Entities;
+using Microsoft.AspNetCore.SignalR;
+using SEP3_LogicServer.Hubs;
 
 namespace SEP3_LogicServer.Services;
 
 public class GameService
 {
+    private readonly IHubContext<GameHub> _hubContext;
     private Dictionary<string, int> inviteCodeToGameID = new Dictionary<string, int>();
     private Dictionary<int, Game> gameBase = new Dictionary<int, Game>();
+    private readonly Dictionary<int, CancellationTokenSource> _turnTimers = new();
+    
+    public GameService(IHubContext<GameHub> hubContext)
+    {
+        _hubContext = hubContext;
+    }
 
     public Game CreateGame(int playerId, string playerName)
     {
@@ -33,7 +42,7 @@ public class GameService
             CurrentTurnPlayerId = playerId,
             InviteCode = inviteCode,
             WinnerId = null,
-            Status = GameStatus.WaitingForOpponent,// will have to be changed to waiting for opponent now just testing
+            Status = GameStatus.WaitingForOpponent, // will have to be changed to waiting for opponent now just testing
             CreatedAt = DateTime.Now
         };
 
@@ -97,6 +106,8 @@ public class GameService
         game.PlayerOId = playerOId;
         game.PlayerOName = playerOName;
         game.Status = GameStatus.InProgress;
+        //game.CurrentTurnPlayerId = game.PlayerXId; already assigned probably
+        game.TurnDeadline = DateTime.Now.AddMinutes(1);
 
         return UpdateGame(game);
     }
@@ -106,8 +117,43 @@ public class GameService
     {
         var game = GetGameById(gameId);
 
+        if (game.Status == GameStatus.InProgress &&
+            game.TurnDeadline is DateTime deadline &&
+            DateTime.Now > deadline)
+        {
+            // Annak járt le az ideje, akinek épp köre van
+            var loserId = game.CurrentTurnPlayerId;
+
+            // Ellenfél meghatározása
+            int? winnerId = null;
+            if (loserId == game.PlayerXId)
+                winnerId = game.PlayerOId;
+            else if (loserId == game.PlayerOId)
+                winnerId = game.PlayerXId;
+
+            if (winnerId is null)
+            {
+                //extra safety if no opponent we finish it
+                game.Status = GameStatus.Finished;
+                game.WinnerId = null;
+            }
+            else
+            {
+                game.Status = GameStatus.Finished;
+                game.WinnerId = winnerId;
+            }
+
+            game.CurrentTurnPlayerId = 0; 
+            game.TurnDeadline = null; 
+
+            UpdateGame(game);
+            return (game, null);
+        }
+
         if (game.Status != GameStatus.InProgress)
-            throw new Exception("Game is not in progress");
+        {
+            return (game, null);
+        }
 
         if (position < 0 || position > 8)
             throw new Exception("Invalid board position");
@@ -145,12 +191,14 @@ public class GameService
             game.WinnerId = playerId;
             game.WinningCells = winningCells;
             game.CurrentTurnPlayerId = 0; // no next turn
+            game.TurnDeadline = null; // no more timer running
         }
         else if (IsDraw(game.Board))
         {
             game.Status = GameStatus.Finished;
             game.WinnerId = null;
             game.CurrentTurnPlayerId = 0; // no next turn
+            game.TurnDeadline = null; // no more timer running
         }
         else
         {
@@ -158,11 +206,50 @@ public class GameService
             game.CurrentTurnPlayerId = (playerId == game.PlayerXId)
                 ? game.PlayerOId ?? game.PlayerXId // in case O not joined yet
                 : game.PlayerXId;
+            game.TurnDeadline = DateTime.Now.AddMinutes(1);
         }
 
         UpdateGame(game);
         return (game, move);
     }
+    
+    public Game CheckTimeout(int gameId)
+    {
+        var game = GetGameById(gameId)
+                   ?? throw new Exception($"Game not found with id {gameId}");
+
+        if (game.Status == GameStatus.InProgress &&
+            game.TurnDeadline is DateTime deadline &&
+            DateTime.Now > deadline)
+        {
+            var loserId = game.CurrentTurnPlayerId;
+
+            int? winnerId = null;
+            if (loserId == game.PlayerXId)
+                winnerId = game.PlayerOId;
+            else if (loserId == game.PlayerOId)
+                winnerId = game.PlayerXId;
+
+            if (winnerId is null)
+            {
+                game.Status = GameStatus.Finished;
+                game.WinnerId = null;
+            }
+            else
+            {
+                game.Status = GameStatus.Finished;
+                game.WinnerId = winnerId;
+            }
+
+            game.CurrentTurnPlayerId = 0;
+            game.TurnDeadline = null;
+
+            UpdateGame(game);
+        }
+
+        return game;
+    }
+
 
     private int[]? GetWinningCells(int[] board, int mark)
     {
@@ -196,7 +283,7 @@ public class GameService
             game.ReplayRequestedByO = true;
         else
             throw new Exception("Player does not belong to this game");
-        
+
         if (game.ReplayRequestedByX && game.ReplayRequestedByO)
         {
             game.Reset();

@@ -45,6 +45,8 @@ public class GameHub : Hub
 
     private static MoveDto MapMoveToDto(Move move)
     {
+        if (move == null)
+            return null;
         return new MoveDto
         {
             MoveId = move.MoveId,
@@ -53,6 +55,22 @@ public class GameHub : Hub
             Position = move.Position
         };
     }
+    
+    public async Task<GameDto> CheckTimeout(int gameId)
+    {
+        Console.WriteLine($"[Hub] CheckTimeout called: game={gameId}");
+
+        var game = _gameService.CheckTimeout(gameId);
+        var dto = MapGameToDto(game);
+
+        // every player gets the event in the game
+        await Clients.Group(game.Id.ToString())
+            .SendAsync("GameUpdated", dto);
+
+        return dto; 
+    }
+
+
 
 
     private async Task AddPointsAsync(int userId, int deltaPoints)
@@ -162,7 +180,7 @@ public class GameHub : Hub
         // visszaküldjük ugyanannak a kliensnek
         await Clients.Caller.SendAsync("TestMessage", $"Server response: {message}");
     }
-    
+
     public async Task RequestReplay(int gameId, int playerId)
     {
         var game = _gameService.RequestReplay(gameId, playerId);

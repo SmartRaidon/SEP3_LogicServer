@@ -15,6 +15,7 @@ public class Game
     public List<Move> Moves { get; set; } = new();
     public int[] Board { get; set; } = new int[9];
     public int[]? WinningCells { get; set; }
+    public DateTime? TurnDeadline { get; set; }
     
     // replay
     public bool ReplayRequestedByX { get; set; }
@@ -30,6 +31,7 @@ public class Game
         CurrentTurnPlayerId = PlayerXId;
         ReplayRequestedByX = false;
         ReplayRequestedByO = false;
+        TurnDeadline = DateTime.Now.AddMinutes(1);
         
     }
 }

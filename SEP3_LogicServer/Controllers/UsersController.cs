@@ -20,44 +20,57 @@ public class UsersController : ControllerBase
         this.authService = authService;
     }
     
-   // POST /api/users/register
+    // POST /api/users/register
     [HttpPost("register")]
     public async Task<ActionResult<UserDto>> RegisterAsync([FromBody] CreateUserDto request)
     {
         Console.WriteLine($"Registration: username={request.Username}, email={request.Email}");
-        Console.WriteLine($"Plain password received: '{request.Password}'");
-        
+
+        // VALIDATION BEFORE ANY DATABASE CALL
+        if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains("@"))
+            return BadRequest("Invalid email format!");
+
+        if (string.IsNullOrWhiteSpace(request.Username) || request.Username.Length < 3)
+            return BadRequest("Username must be at least 3 characters!");
+
+        if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
+            return BadRequest("Password must be at least 6 characters!");
+
+    
         try
         {
-            // HASH the password BEFORE sending to Java
+            // Check if user already exists
+            var existingUser = await _userRepository.GetByEmailAsync(request.Email);
+            if (existingUser != null)
+                return Conflict("This e-mail is already registered!");
+
             string hashedPassword = authService.HashPassword(request.Password);
-            Console.WriteLine($"Password hashed: {hashedPassword.Substring(0, Math.Min(30, hashedPassword.Length))}...");
-            
-            User user = new() 
-            { 
+
+            User user = new()
+            {
                 Username = request.Username,
                 Email = request.Email,
-                Password = hashedPassword  // Send HASHED password
+                Password = hashedPassword // Send HASHED password
             };
-            
+
             User created = await _userRepository.AddAsync(user);
-            
-            UserDto dto = new() 
+
+            UserDto dto = new()
             {
                 Id = created.Id,
                 Username = created.Username,
                 Email = created.Email
             };
-            
-            Console.WriteLine($"User registered: {created.Email} (ID: {created.Id})");
+
             return Created($"/api/users/{dto.Id}", dto);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Registration error: {ex.Message}");
-            return StatusCode(500);
+            return StatusCode(500, "Server error during registration.");
         }
     }
+
 
     // POST /api/users/login
     [HttpPost("login")]

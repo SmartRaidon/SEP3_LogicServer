@@ -271,6 +271,7 @@ public class UserRepository : IUserRepository
         {
             var userProto = new UserProto { Id = id };
             var anyPayload = Any.Pack(userProto);
+            
             var request = new Request
             {
                 Handler = HandlerType.HandlerUser,
@@ -304,6 +305,68 @@ public class UserRepository : IUserRepository
             return null;
         }
     }
-  
-  
+    public async Task<IReadOnlyList<User>> GetTop10PlayersAsync()
+{
+    try
+    {
+        var userProto = new UserProto(); //empty proto
+        var anyPayload = Any.Pack(userProto); //wrapped into Any
+        
+        
+        //making request with the handler, action and empty payload
+        var request = new Request 
+        {
+            Handler = HandlerType.HandlerUser,
+            Action  = ActionType.ActionTop10,
+            Payload = anyPayload
+        };
+
+        Console.WriteLine("Fetching top 10 players from Java server...");
+        var response = await _grpcClient.handleRequestAsync(request); //send request
+
+        Console.WriteLine($"Top10 response status: {response.Status}");
+
+        if (response.Status == StatusType.StatusOk)
+        {
+            //returned UserProtoList
+            var listProto = response.Payload.Unpack<UserListProto>();
+
+            //convert userListProto to User
+            var users = listProto.Users
+                .Select(u => new User
+                {
+                    Id       = u.Id,
+                    Username = u.Username,
+                    Password = string.Empty,
+                    Email    = u.Email,
+                    Points   = u.Points
+                })
+                .ToList()
+                .AsReadOnly(); //immutable
+            
+            return users;
+        }
+
+        if (response.Status == StatusType.StatusError)
+        {
+            try
+            {
+                var errorMessage = response.Payload.Unpack<StringValue>(); //unpack error
+                throw new InvalidOperationException($"Server error: {errorMessage.Value}");
+            }
+            catch
+            {
+                throw new InvalidOperationException("Server returned error status for top 10 request.");
+            }
+        }
+        throw new InvalidOperationException($"Unexpected error top 10 request: {response.Status}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error in GetTop10PlayersAsync: {ex.Message}");
+        Console.WriteLine(ex.StackTrace);
+        throw;
+    }
+}
+
 }

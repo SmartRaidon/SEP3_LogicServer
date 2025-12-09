@@ -11,4 +11,6 @@ public interface IUserRepository
     Task<User?> GetByEmailAsync(string username);
     Task<User?> GetSingleAsync(int id);
 
+    Task<IReadOnlyList<User>> GetTop10PlayersAsync();
+
 }

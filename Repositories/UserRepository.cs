@@ -110,38 +110,54 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetByIdAsync(int id)
     {
-        var idProto = new Int32Value { Value = id };
-        var anyPayload = Any.Pack(idProto);
-
-        var request = new Request
+        try
         {
-            Handler = HandlerType.HandlerUser,
-            Action = ActionType.ActionGet,
-            Payload = anyPayload
-        };
+            
+            var userProto = new UserProto { Id = id };
+            var anyPayload = Any.Pack(userProto);
 
-        var response = await _grpcClient.handleRequestAsync(request);
-
-        if (response.Status == StatusType.StatusOk)
-        {
-            var userProto = response.Payload.Unpack<UserProto>();
-
-            return new User
+            var request = new Request
             {
-                Id = userProto.Id,
-                Username = userProto.Username,
-                Password = "", // hmm
-                Email = userProto.Email,
-                Points = userProto.Points
+                Handler = HandlerType.HandlerUser,
+                Action = ActionType.ActionGet,
+                Payload = anyPayload
             };
-        }
 
-        if (response.Status == StatusType.StatusError)
-        {
+            Console.WriteLine($"Sending GET request to Java server for user id={id}");
+            var response = await _grpcClient.handleRequestAsync(request);
+
+            Console.WriteLine($"Response status: {response.Status}");
+
+            if (response.Status == StatusType.StatusOk)
+            {
+                var responseProto = response.Payload.Unpack<UserProto>();
+                Console.WriteLine($"User found: Id={responseProto.Id}, Username={responseProto.Username}, Points={responseProto.Points}");
+
+                return new User
+                {
+                    Id = responseProto.Id,
+                    Username = responseProto.Username,
+                    Password = "",
+                    Email = responseProto.Email,
+                    Points = responseProto.Points
+                };
+            }
+
+            if (response.Status == StatusType.StatusError)
+            {
+                Console.WriteLine($"ERROR: Server returned error for user id={id}");
+                return null;
+            }
+
+            Console.WriteLine($"User not found with id={id}");
             return null;
         }
-
-        return null;
+        catch (Exception ex)
+        {
+            Console.WriteLine($"ERROR in GetByIdAsync for id={id}: {ex.Message}");
+            Console.WriteLine(ex.StackTrace);
+            return null;
+        }
     }
 
     public async Task<User> UpdateAsync(User user)
@@ -288,6 +304,6 @@ public class UserRepository : IUserRepository
             return null;
         }
     }
-
+  
   
 }

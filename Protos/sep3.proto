@@ -41,6 +41,7 @@ enum ActionType
   ACTION_UPDATE = 3;
   ACTION_DELETE = 4;
   ACTION_LIST = 5;
+  ACTION_TOP10 = 6;
 }
 
 enum StatusType

@@ -83,7 +83,9 @@ public class UsersController : ControllerBase
             var response = new UserDto()
             {
                 Id = user.Id,
-                Username = user.Username
+                Username = user.Username,
+                Email = user.Email,
+                Points = user.Points
             };
 
             Console.WriteLine($"Login successful: {user.Email} (ID: {user.Id})");
@@ -118,7 +120,8 @@ public class UsersController : ControllerBase
             {
                 Id = user.Id,
                 Username = user.Username,
-                Email = user.Email
+                Email = user.Email,
+                Points = user.Points
             };
 
             return Ok(dto);

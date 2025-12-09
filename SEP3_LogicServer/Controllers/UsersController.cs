@@ -133,4 +133,68 @@ public class UsersController : ControllerBase
         }
     }
     
+    
+    [HttpPatch("{id}/password")]
+    public async Task<ActionResult> ChangePassword(int id, [FromBody] ChangePasswrodDTO dto)
+    {
+        try
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound($"User with ID {id} not found");
+            }
+            
+            user.Password = authService.HashPassword(dto.NewPassword);
+            await _userRepository.UpdateAsync(user);
+            return NoContent();
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, e.Message);
+        }
+    }
+
+    [HttpPatch("{id}/username")]
+    public async Task<ActionResult> ChangeUsername(int id, [FromBody] ChangeUsernameDTO dto)
+    {
+        try
+        {
+            Console.WriteLine($"ChangeUsername called: id={id}, newUsername={dto.NewUsername}");
+            var user = await _userRepository.GetSingleAsync(id);
+            if (user == null)
+            {
+                return NotFound($"User with ID {id} not found");
+            }
+        
+            Console.WriteLine($"Current user: Id={user.Id}, Username={user.Username}, Email={user.Email}");
+            user.Username = dto.NewUsername;
+            Console.WriteLine($"Updating user to: Id={user.Id}, Username={user.Username}, Email={user.Email}");
+        
+            await _userRepository.UpdateAsync(user);
+        
+            Console.WriteLine("Username updated successfully");
+            return NoContent();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Error in ChangeUsername: {e.Message}");
+            return StatusCode(500, e.Message);
+        }
+    }
+
+    [HttpGet("top10")]
+    public async Task<ActionResult<IEnumerable<UserDto>>> GetTop10Players()
+    {
+        try
+        {
+            var topPlayers = await _userRepository.GetTop10PlayersAsync();
+            return Ok(topPlayers);
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, e.Message);
+        }
+    }
+
 }

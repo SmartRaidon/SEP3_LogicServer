@@ -1,4 +1,6 @@
-﻿using Entities;
+﻿using ApiContracts;
+using Entities;
+using Microsoft.AspNetCore.Mvc;
 using RepositoryContracts;
 
 namespace SEP3_LogicServer.Services;
@@ -62,5 +64,8 @@ public class AuthService
         Console.WriteLine($"Password verified successfully");
         return user;
     }
+    
+    
+
     
 }

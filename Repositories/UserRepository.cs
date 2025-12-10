@@ -137,7 +137,7 @@ public class UserRepository : IUserRepository
                 {
                     Id = responseProto.Id,
                     Username = responseProto.Username,
-                    Password = "",
+                    Password = responseProto.Password,
                     Email = responseProto.Email,
                     Points = responseProto.Points
                 };

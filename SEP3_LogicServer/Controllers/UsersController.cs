@@ -173,17 +173,12 @@ public class UsersController : ControllerBase
     {
         try
         {
-            Console.WriteLine($"ChangeUsername called: id={id}, newUsername={dto.NewUsername}");
             var user = await _userRepository.GetSingleAsync(id);
             if (user == null)
             {
                 return NotFound($"User with ID {id} not found");
             }
-        
-            Console.WriteLine($"Current user: Id={user.Id}, Username={user.Username}, Email={user.Email}");
             user.Username = dto.NewUsername;
-            Console.WriteLine($"Updating user to: Id={user.Id}, Username={user.Username}, Email={user.Email}");
-        
             await _userRepository.UpdateAsync(user);
         
             Console.WriteLine("Username updated successfully");

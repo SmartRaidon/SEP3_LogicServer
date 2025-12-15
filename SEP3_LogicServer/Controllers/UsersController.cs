@@ -12,12 +12,12 @@ namespace SEP3_LogicServer.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserRepository _userRepository;
-    private readonly AuthService authService;
+    private readonly AuthService _authService;
     
     public UsersController(IUserRepository userRepository, AuthService authService)
     {
         _userRepository = userRepository;
-        this.authService = authService;
+        this._authService = authService;
     }
     
     // POST /api/users/register
@@ -44,7 +44,7 @@ public class UsersController : ControllerBase
             if (existingUser != null)
                 return Conflict("This e-mail is already registered!");
 
-            string hashedPassword = authService.HashPassword(request.Password);
+            string hashedPassword = _authService.HashPassword(request.Password);
 
             User user = new()
             {
@@ -81,7 +81,7 @@ public class UsersController : ControllerBase
 
         try
         {
-            User? user = await authService.ValidateUserAsync(request.Email, request.Password);
+            User? user = await _authService.ValidateUserAsync(request.Email, request.Password);
 
             if (user == null)
             {
@@ -158,7 +158,7 @@ public class UsersController : ControllerBase
                 return NotFound($"User with ID {id} not found");
             }
             
-            user.Password = authService.HashPassword(dto.NewPassword);
+            user.Password = _authService.HashPassword(dto.NewPassword);
             await _userRepository.UpdateAsync(user);
             return NoContent();
         }

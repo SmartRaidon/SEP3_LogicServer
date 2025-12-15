@@ -175,12 +175,6 @@ public class GameHub : Hub
         return Task.FromResult(dto);
     }
 
-    public async Task SendTest(string message)
-    {
-        // visszaküldjük ugyanannak a kliensnek
-        await Clients.Caller.SendAsync("TestMessage", $"Server response: {message}");
-    }
-
     public async Task RequestReplay(int gameId, int playerId)
     {
         var game = _gameService.RequestReplay(gameId, playerId);

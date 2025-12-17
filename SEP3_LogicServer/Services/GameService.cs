@@ -10,7 +10,6 @@ public class GameService
     private readonly IHubContext<GameHub> _hubContext;
     private Dictionary<string, int> inviteCodeToGameID = new Dictionary<string, int>();
     private Dictionary<int, Game> gameBase = new Dictionary<int, Game>();
-    private readonly Dictionary<int, CancellationTokenSource> _turnTimers = new();
     
     public GameService(IHubContext<GameHub> hubContext)
     {
